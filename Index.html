@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<!-- saved from url=(0122)https://storage.googleapis.com/kq-storage.kalvium.community/Data%20Structures%20and%20Algorithms%2Ftree_terminologies.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Tree Data Structure</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #ec4899;
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+            --line-color: #cbd5e1;
+            --highlight: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: 350px;
+            background: var(--card-bg);
+            padding: 20px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 12px;
+            border: 1px solid var(--primary);
+            background: transparent;
+            color: var(--primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .btn:hover, .btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .info-card {
+            background: #f8fafc;
+            border-left: 4px solid var(--secondary);
+            padding: 15px;
+            border-radius: 4px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .info-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: var(--secondary);
+        }
+
+        .info-content p {
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .analogy {
+            font-style: italic;
+            color: #64748b;
+            font-size: 0.9rem;
+            background: #eef2ff;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        /* --- MAIN TREE AREA --- */
+        .main-area {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center; /* Centers the tree visually */
+            position: relative;
+            overflow: auto; /* Allow scrolling if tree is huge */
+            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* CSS Tree Implementation */
+        .tree {
+            white-space: nowrap;
+            padding: 50px;
+        }
+
+        .tree ul {
+            padding-top: 20px;
+            position: relative;
+            transition: all 0.5s;
+            display: flex;
+            justify-content: center;
+        }
+
+        .tree li {
+            float: left; text-align: center;
+            list-style-type: none;
+            position: relative;
+            padding: 20px 10px 0 10px;
+            transition: all 0.5s;
+        }
+
+        /* Connecting Lines (Edges) */
+        .tree li::before, .tree li::after {
+            content: '';
+            position: absolute; top: 0; right: 50%;
+            border-top: 2px solid var(--line-color);
+            width: 50%; height: 20px;
+            transition: all 0.3s;
+        }
+        .tree li::after {
+            right: auto; left: 50%;
+            border-left: 2px solid var(--line-color);
+        }
+
+        /* Remove connectors from root */
+        .tree li:only-child::after, .tree li:only-child::before {
+            display: none;
+        }
+        .tree li:only-child { padding-top: 0; }
+
+        /* Remove space from the top of the first and last elements */
+        .tree li:first-child::before, .tree li:last-child::after {
+            border: 0 none;
+        }
+        /* Add back the vertical line for the last node */
+        .tree li:last-child::before{
+            border-right: 2px solid var(--line-color);
+            border-radius: 0 5px 0 0;
+        }
+        .tree li:first-child::after{
+            border-radius: 5px 0 0 0;
+        }
+
+        /* The Downward connector from parent to children */
+        .tree ul ul::before{
+            content: '';
+            position: absolute; top: 0; left: 50%;
+            border-left: 2px solid var(--line-color);
+            width: 0; height: 20px;
+            transition: all 0.3s;
+        }
+
+        /* The Node Card */
+        .node-content {
+            display: inline-block;
+            padding: 12px 20px;
+            text-decoration: none;
+            background: white;
+            color: var(--text);
+            border: 2px solid #e2e8f0;
+            border-radius: 50px; /* Pill shape */
+            font-weight: bold;
+            font-size: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+            min-width: 60px;
+        }
+
+        .node-content:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+            border-color: var(--primary);
+        }
+
+        /* --- HIGHLIGHTING STATES --- */
+
+        /* Highlight Node */
+        .node-content.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .node-content.secondary-highlight {
+            background: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+        }
+
+        /* Highlight Edges (Lines) */
+        .tree li.path-active::before, 
+        .tree li.path-active::after {
+            border-color: var(--highlight);
+            border-width: 3px;
+        }
+        
+        /* Only highlight downward line if this node has a path-active child UL */
+        .tree li.path-active > ul.path-active::before {
+            border-color: var(--highlight);
+            border-width: 3px;
+        }
+
+        /* Specific Edge Highlight class helper */
+        .highlight-edge {
+            border-color: var(--highlight) !important;
+            border-width: 3px !important;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+<body data-new-gr-c-s-check-loaded="14.1279.0" data-gr-ext-installed="">
+
+    <!-- LEFT SIDEBAR -->
+    <div class="sidebar">
+        <div class="title">Tree Explorer</div>
+        <p>Click buttons to learn concepts, or click nodes in the tree to inspect them.</p>
+        
+        <div class="controls">
+            <button class="btn" onclick="teach(&#39;root&#39;)">Root</button>
+            <button class="btn" onclick="teach(&#39;leaf&#39;)">Leaf Nodes</button>
+            <button class="btn" onclick="teach(&#39;internal&#39;)">Internal Nodes</button>
+            <button class="btn" onclick="teach(&#39;parent&#39;)">Parent</button>
+            <button class="btn" onclick="teach(&#39;child&#39;)">Child</button>
+            <button class="btn" onclick="teach(&#39;edge&#39;)">Edge</button>
+            <button class="btn" onclick="teach(&#39;path&#39;)">Path</button>
+            <button class="btn" onclick="teach(&#39;ancestor&#39;)">Ancestor</button>
+            <button class="btn" onclick="teach(&#39;descendant&#39;)">Descendant</button>
+            <button class="btn" style="border-color: #ef4444; color: #ef4444;" onclick="resetTree()">Reset</button>
+        </div>
+
+        <div id="infoPanel">
+            <div class="info-card">
+                <div class="info-title">Welcome!</div>
+                <div class="info-content">
+                    <p>Select a concept above or click a node to begin.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN TREE VISUALIZATION -->
+    <div class="main-area">
+        <div class="tree">
+            <!-- 
+                HTML Structure Logic:
+                ul = Container for children
+                li = A branch (contains the node and the ul for its children)
+            -->
+            <ul>
+                <li>
+                    <div class="node-content" id="A" onclick="inspectNode(&#39;A&#39;)">Root</div>
+                    <ul>
+                        <li>
+                            <div class="node-content" id="B" onclick="inspectNode(&#39;B&#39;)">B</div>
+                            <ul>
+                                <li>
+                                    <div class="node-content" id="D" onclick="inspectNode(&#39;D&#39;)">D</div>
+                                </li>
+                                <li>
+                                    <div class="node-content" id="E" onclick="inspectNode(&#39;E&#39;)">E</div>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <div class="node-content" id="C" onclick="inspectNode(&#39;C&#39;)">C</div>
+                            <ul>
+                                <li>
+                                    <div class="node-content" id="F" onclick="inspectNode(&#39;F&#39;)">F</div>
+                                    <ul>
+                                        <li>
+                                            <div class="node-content" id="H" onclick="inspectNode(&#39;H&#39;)">H</div>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li>
+                                    <div class="node-content" id="G" onclick="inspectNode(&#39;G&#39;)">G</div>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA DEFINITION ---
+        // We define the relationships manually to make logic easier than traversing DOM
+        const treeData = {
+            'A': { parent: null, children: ['B', 'C'] },
+            'B': { parent: 'A', children: ['D', 'E'] },
+            'C': { parent: 'A', children: ['F', 'G'] },
+            'D': { parent: 'B', children: [] },
+            'E': { parent: 'B', children: [] },
+            'F': { parent: 'C', children: ['H'] },
+            'G': { parent: 'C', children: [] },
+            'H': { parent: 'F', children: [] }
+        };
+
+        const definitions = {
+            root: {
+                title: "Root",
+                text: "The topmost node in a tree. It is the only node with <b>no parent</b>. Every tree has one and only one root.",
+                analogy: "Analogy: The CEO of a company. They are at the top and don't report to anyone."
+            },
+            leaf: {
+                title: "Leaf (External) Node",
+                text: "A node with <b>no children</b>. It is at the end of a branch.",
+                analogy: "Analogy: Front-line employees who have no one reporting to them."
+            },
+            internal: {
+                title: "Internal Node",
+                text: "A node that has at least one child. It is not a leaf.",
+                analogy: "Analogy: Middle management. They report to someone and have people reporting to them."
+            },
+            parent: {
+                title: "Parent",
+                text: "The immediate predecessor of a node. The node directly above in the hierarchy.",
+                analogy: "Analogy: In a family tree, your mother or father."
+            },
+            child: {
+                title: "Child",
+                text: "The immediate successor of a node. The nodes directly below in the hierarchy.",
+                analogy: "Analogy: Sub-folders inside a main folder."
+            },
+            edge: {
+                title: "Edge",
+                text: "The link between two nodes. It represents the relationship.",
+                analogy: "Analogy: The line connecting friends on a social network diagram."
+            },
+            path: {
+                title: "Path",
+                text: "A sequence of consecutive edges from a source node to a destination node.",
+                analogy: "Analogy: The route or lineage from an ancestor to a descendant."
+            },
+            ancestor: {
+                title: "Ancestor",
+                text: "Any predecessor on the path from the root to a specific node (Parent, Grandparent, etc.).",
+                analogy: "Analogy: Parent folders all the way up to the C: Drive."
+            },
+            descendant: {
+                title: "Descendant",
+                text: "Any successor from a node towards the leaves (Child, Grandchild, etc.).",
+                analogy: "Analogy: All employees under a specific manager's department."
+            }
+        };
+
+        // --- UTILITY FUNCTIONS ---
+
+        function clearVisuals() {
+            // Remove active classes from nodes
+            document.querySelectorAll('.node-content').forEach(el => {
+                el.classList.remove('active');
+                el.classList.remove('secondary-highlight');
+            });
+            // Remove active classes from lines (li elements)
+            document.querySelectorAll('li').forEach(el => el.classList.remove('path-active'));
+            document.querySelectorAll('ul').forEach(el => el.classList.remove('path-active'));
+            
+            // Reset edge styling explicitly
+            const style = document.getElementById('dynamic-styles');
+            if(style) style.innerHTML = '';
+        }
+
+        function updateInfo(title, text, analogy) {
+            const panel = document.getElementById('infoPanel');
+            panel.innerHTML = `
+                <div class="info-card">
+                    <div class="info-title">${title}</div>
+                    <div class="info-content">
+                        <p>${text}</p>
+                        ${analogy ? `<div class="analogy">${analogy}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getAncestors(id) {
+            let ancestors = [];
+            let curr = treeData[id].parent;
+            while (curr) {
+                ancestors.push(curr);
+                curr = treeData[curr].parent;
+            }
+            return ancestors.reverse(); // Root first
+        }
+
+        function getDescendants(id, list = []) {
+            const children = treeData[id].children;
+            children.forEach(child => {
+                list.push(child);
+                getDescendants(child, list);
+            });
+            return list;
+        }
+
+        // --- CORE INTERACTION ---
+
+        function resetTree() {
+            clearVisuals();
+            updateInfo("Ready", "Select a node or a concept to start.");
+        }
+
+        // Called when user clicks a concept button
+        function teach(concept) {
+            clearVisuals();
+            const def = definitions[concept];
+            updateInfo(def.title, def.text, def.analogy);
+
+            // Logic to highlight specific parts based on concept
+            const nodes = Object.keys(treeData);
+            
+            if (concept === 'root') {
+                document.getElementById('A').classList.add('active');
+            }
+            else if (concept === 'leaf') {
+                nodes.filter(n => treeData[n].children.length === 0).forEach(n => {
+                    document.getElementById(n).classList.add('active');
+                });
+            }
+            else if (concept === 'internal') {
+                nodes.filter(n => treeData[n].children.length > 0).forEach(n => {
+                    document.getElementById(n).classList.add('active');
+                });
+            }
+            else if (concept === 'edge') {
+                // Highlight all edges using CSS injection for the lines
+                addDynamicCSS(`.tree li::before, .tree li::after, .tree ul ul::before { border-color: var(--highlight) !important; }`);
+                updateInfo("Edge", "All the lines you see connecting the nodes are <b>Edges</b>.", def.analogy);
+            }
+            else {
+                // For relational concepts (Parent, Child, Path, etc.), prompt user to pick a node
+                updateInfo(def.title, def.text + "<br><br><b>👉 Click on any node in the tree to see its " + def.title + ".</b>", def.analogy);
+                // Set a global mode flag
+                window.interactionMode = concept;
+            }
+        }
+
+        // Called when user clicks a specific node
+        function inspectNode(id) {
+            const node = treeData[id];
+            const mode = window.interactionMode || 'inspect'; // Default to inspect
+            
+            clearVisuals();
+
+            // Highlight the clicked node
+            const el = document.getElementById(id);
+            el.classList.add('active');
+
+            if (mode === 'inspect') {
+                // Full Report
+                const ancestors = getAncestors(id);
+                const descendants = getDescendants(id);
+                const type = node.children.length === 0 ? "Leaf Node" : (node.parent === null ? "Root Node" : "Internal Node");
+                
+                let html = `
+                    <div class="info-card">
+                        <div class="info-title">Node ${id}</div>
+                        <div class="info-content">
+                            <p><b>Type:</b> ${type}</p>
+                            <p><b>Parent:</b> ${node.parent || 'None (I am Root)'}</p>
+                            <p><b>Children:</b> ${node.children.length > 0 ? node.children.join(', ') : 'None'}</p>
+                            <p><b>Ancestors:</b> ${ancestors.join(' &rarr; ') || 'None'}</p>
+                            <p><b>Descendants:</b> ${descendants.join(', ') || 'None'}</p>
+                        </div>
+                        <div class="analogy">Path from Root highlighted.</div>
+                    </div>
+                `;
+                document.getElementById('infoPanel').innerHTML = html;
+                
+                // Visualize Path from Root
+                highlightPath(id);
+            }
+            else if (mode === 'parent') {
+                if(node.parent) {
+                    document.getElementById(node.parent).classList.add('secondary-highlight');
+                    updateInfo("Parent of " + id, `Node <b>${node.parent}</b> is the parent.`, definitions.parent.analogy);
+                    // Highlight edge between them
+                    highlightEdgeBetween(node.parent, id);
+                } else {
+                    updateInfo("Root Node", "Node " + id + " is the Root. It has no parent.", "");
+                }
+            }
+            else if (mode === 'child') {
+                if(node.children.length > 0) {
+                    node.children.forEach(c => document.getElementById(c).classList.add('secondary-highlight'));
+                    updateInfo("Children of " + id, `Nodes <b>${node.children.join(', ')}</b> are the children.`, definitions.child.analogy);
+                } else {
+                    updateInfo("Leaf Node", "Node " + id + " has no children.", "");
+                }
+            }
+            else if (mode === 'path') {
+                highlightPath(id);
+                const ancestors = getAncestors(id);
+                updateInfo("Path to " + id, `Path: <b>${[...ancestors, id].join(' → ')}</b>`, definitions.path.analogy);
+            }
+            else if (mode === 'ancestor') {
+                const ancestors = getAncestors(id);
+                ancestors.forEach(a => document.getElementById(a).classList.add('secondary-highlight'));
+                highlightPath(id); // Ancestors usually implies the path
+                updateInfo("Ancestors of " + id, `Nodes: <b>${ancestors.join(', ')}</b>`, definitions.ancestor.analogy);
+            }
+            else if (mode === 'descendant') {
+                const descendants = getDescendants(id);
+                descendants.forEach(d => document.getElementById(d).classList.add('secondary-highlight'));
+                 // Dirty hack to highlight lines downwards
+                 // In a real app, we'd traverse logic, here we just text it
+                updateInfo("Descendants of " + id, `Nodes: <b>${descendants.join(', ')}</b>`, definitions.descendant.analogy);
+            }
+        }
+
+        // --- VISUALIZATION HELPERS ---
+
+        function highlightPath(endId) {
+            // Walk up from endId to Root and add .path-active to the LI elements
+            let curr = endId;
+            const pathNodes = [];
+            
+            // First, collect all nodes on the path
+            while(curr) {
+                pathNodes.push(curr);
+                curr = treeData[curr].parent;
+            }
+            
+            // Now mark the nodes and their connecting edges
+            for(let i = 0; i < pathNodes.length; i++) {
+                const nodeId = pathNodes[i];
+                const nodeEl = document.getElementById(nodeId);
+                const li = nodeEl.closest('li');
+                
+                li.classList.add('path-active');
+                
+                // If this node has a parent that's also on the path, mark the UL between them
+                if(i < pathNodes.length - 1) { // Not the root
+                    const parentId = pathNodes[i + 1];
+                    const parentNodeEl = document.getElementById(parentId);
+                    const parentLi = parentNodeEl.closest('li');
+                    const childUl = parentLi.querySelector('ul');
+                    
+                    if(childUl) {
+                        childUl.classList.add('path-active');
+                    }
+                }
+            }
+        }
+
+        function highlightEdgeBetween(parentId, childId) {
+             const nodeEl = document.getElementById(childId);
+             const li = nodeEl.closest('li');
+             li.classList.add('path-active'); // This highlights the connector
+             li.closest('ul').classList.add('path-active'); // Highlights the down stroke
+        }
+
+        // Helper to inject CSS for specific edge cases
+        function addDynamicCSS(css) {
+            let style = document.getElementById('dynamic-styles');
+            if (!style) {
+                style = document.createElement('style');
+                style.id = 'dynamic-styles';
+                document.head.appendChild(style);
+            }
+            style.innerHTML = css;
+        }
+
+    </script>
+
+</body><grammarly-desktop-integration data-grammarly-shadow-root="true"><template shadowrootmode="open"><style>
+      div.grammarly-desktop-integration {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select:none;
+        user-select:none;
+      }
+
+      div.grammarly-desktop-integration:before {
+        content: attr(data-content);
+      }
+    </style><div aria-label="grammarly-integration" role="group" tabindex="-1" class="grammarly-desktop-integration" data-content="{&quot;mode&quot;:&quot;full&quot;,&quot;isActive&quot;:true,&quot;isUserDisabled&quot;:false}"></div></template></grammarly-desktop-integration></html>
